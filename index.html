@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Meta tags for social media banners -->
+  <meta name="description" content="BAM! Bayesian Anything Model: a foundation model for generative computational imaging">
+  <meta property="og:title" content="BAM! Bayesian Anything Model"/>
+  <meta property="og:description" content="A 36M-parameter physics-aware foundation model for few-step posterior sampling in computational imaging."/>
+  <meta property="og:url" content="https://bayesian-anything-model.github.io/"/>
+  <meta property="og:image" content="https://bayesian-anything-model.github.io/static/images/banner.jpg"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="600"/>
+  <meta name="twitter:title" content="BAM! Bayesian Anything Model">
+  <meta name="twitter:description" content="A 36M-parameter physics-aware foundation model for few-step posterior sampling in computational imaging.">
+  <meta name="twitter:image" content="https://bayesian-anything-model.github.io/static/images/banner.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="keywords" content="Bayesian imaging, inverse problems, flow maps, consistency models, posterior sampling, foundation model, computational imaging">
+
+  <title>BAM! Bayesian Anything Model</title>
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/img-comparison-slider@8/dist/index.js"></script>
+
+  <!-- MathJax (put this in <head> before any LaTeX appears) -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        macros: {
+          bm: ["\\boldsymbol{#1}", 1],
+          Id: "\\mathrm{Id}",
+          sg: "\\mathrm{sg}",
+          vx: "\\boldsymbol{x}",
+          vy: "\\boldsymbol{y}",
+          vz: "\\boldsymbol{z}",
+          vw: "\\boldsymbol{w}"
+        }
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    :root { --bam: #8a2a3b; --bam-row: rgb(246, 231, 233); --zoom: #ffd400; }
+
+    .wide-figure { width: 100%; height: auto; display: block; }
+    /* keep wide tables / grids scrolling inside their box instead of widening the page */
+    .container { min-width: 0; }
+    @media (max-width: 1023px) { .container { max-width: 100%; } }
+    .table-container, .qual-scroll, [data-panes], .tab-pane { max-width: 100%; min-width: 0; }
+
+    @media (max-width: 600px) {
+      .publication-title { font-size: 1.75rem !important; line-height: 1.2; }
+    }
+
+    .affiliations { font-size: 0.95rem; color: #555; }
+
+    /* ─────────────── Figure 1: interactive mosaic ─────────────── */
+    /* The slider's right-hand ("second") image sets its size; the left one is stretched over it.
+       So the images are left at their natural aspect ratio, and the mosaic cells are exactly square. */
+    .teaser-wrap {
+      container-type: inline-size;
+      width: 100%;
+      max-width: 1200px;
+      margin-inline: auto;
+      padding: 0 1rem;
+      box-sizing: border-box;
+    }
+    .teaser-grid {
+      --gap: 6px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-auto-flow: dense;
+      gap: var(--gap);
+    }
+    .teaser-tile {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,.15);
+      background: #111;
+    }
+    .teaser-tile.t-big, .teaser-tile.t-jpeg, .teaser-tile.t-kohler { grid-column: span 2; }
+
+    @media (min-width: 769px) {
+      .teaser-grid {
+        grid-template-columns: repeat(8, 1fr);
+        /* square cells: row height = column width */
+        grid-template-rows: repeat(4, calc((100cqw - 7 * var(--gap)) / 8));
+      }
+      .t-big    { grid-column: 1 / 5 !important; grid-row: 1 / 5; }
+      .t-afhq   { grid-column: 5 / 7; grid-row: 1 / 3; }
+      .t-jpeg   { grid-column: 5 / 7 !important; grid-row: 3 / 5; }
+      .t-ffhq   { grid-column: 7 / 9; grid-row: 1 / 3; }
+      .t-kohler { grid-column: 7 / 9 !important; grid-row: 3 / 4; }
+      .t-lsun1  { grid-column: 7 / 8; grid-row: 4 / 5; }
+      .t-lsun2  { grid-column: 8 / 9; grid-row: 4 / 5; }
+      .t-lsun1 .tile-tag, .t-lsun2 .tile-tag { display: none; }
+    }
+
+    img-comparison-slider {
+      display: block;
+      width: 100%;
+      --divider-width: 3px;
+      --divider-color: #ffffffcc;
+      --default-handle-color: #ffffff;
+    }
+    img-comparison-slider img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    /* the left image lives in an absolutely positioned layer sized to the right image */
+    img-comparison-slider img[slot="first"] { height: 100%; object-fit: fill; }
+    img[src$=".png"] { image-rendering: pixelated; }
+
+    .tile-label, .tile-tag { position: absolute; pointer-events: none; color: #fff; z-index: 2; }
+    .tile-label {
+      left: 0; right: 0; bottom: 0;
+      padding: .25rem .6rem;
+      background: rgba(0,0,0,.6);
+      font-weight: 700;
+      font-size: .9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .t-lsun1 .tile-label, .t-lsun2 .tile-label { font-size: .75rem; padding: .2rem .4rem; }
+    .tile-tag {
+      top: .4rem;
+      font-size: .7rem;
+      padding: .1rem .4rem;
+      border-radius: 3px;
+      background: rgba(0,0,0,.45);
+    }
+    .tag-left { left: .4rem; }
+    .tag-right { right: .4rem; }
+    .teaser-caption { max-width: 1200px; margin: .8rem auto 0; padding: 0 1rem; }
+
+    /* ─────────────── highlights ─────────────── */
+    .stat { text-align: center; padding: 1rem .5rem; }
+    .stat .value { font-family: 'Google Sans', sans-serif; font-size: 2.2rem; font-weight: 700; color: var(--bam); line-height: 1.1; }
+    .stat .label { font-size: .9rem; color: #555; margin-top: .3rem; }
+
+    /* ─────────────── method ─────────────── */
+    .eq-block { overflow-x: auto; overflow-y: hidden; }
+    .algo-code {
+      counter-reset: line;
+      border: 1px solid #e1e1e1;
+      border-radius: 6px;
+      background: #fafafa;
+      padding: 1rem 1.25rem;
+      font-size: 0.92rem;
+      overflow-x: auto;
+      margin: 0 auto;
+      max-width: 760px;
+    }
+    .algo-code li { list-style: none; position: relative; padding-left: 2.5em; margin: 0.3rem 0; }
+    .algo-code li::before {
+      counter-increment: line;
+      content: counter(line);
+      position: absolute; left: 0; width: 2em; text-align: right; color: #606060;
+    }
+    .algo-code .indent1 { padding-left: 3.75em; }
+    .algo-code .indent1::before { left: 0; }
+    .algo-code .comment { color: #777; font-style: italic; }
+    .figure-caption { max-width: 860px; margin: .6rem auto 0; }
+
+    /* ─────────────── tabs ─────────────── */
+    .tab-pane { display: none; }
+    .tab-pane.is-active { display: block; }
+
+    /* ─────────────── tables ─────────────── */
+    .results-table { font-size: .82rem; margin: 0 auto; }
+    .results-table th, .results-table td { white-space: nowrap; }
+    .results-table .num { text-align: right; }
+    .results-table th.grp { text-align: center; border-bottom: 1px solid #bbb; }
+    .results-table .grp-start { border-left: 1px solid #ddd; }
+    .results-table tr.sec td { font-weight: 700; background: #f5f5f5; }
+    .results-table tr.bam-row td { background: var(--bam-row); }
+    .results-table u { text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    .table-note { text-align: center; font-size: .85rem; color: #666; margin-bottom: .5rem; }
+
+    /* ─────────────── qualitative grids ─────────────── */
+    .qual-scroll { overflow-x: auto; padding-bottom: .5rem; }
+    .qual-grid {
+      display: grid;
+      grid-template-columns: repeat(var(--ncol), minmax(82px, 1fr));
+      gap: 3px;
+      min-width: calc(var(--ncol) * 85px);
+    }
+    .qual-head { text-align: center; font-weight: 700; font-size: .8rem; padding-bottom: .2rem; border-bottom: 1px solid #ccc; }
+    .qual-row-title { grid-column: 1 / -1; font-size: .85rem; font-weight: 600; margin-top: .6rem; }
+    .qual-cell { cursor: zoom-in; }
+    .qual-cell.missing { cursor: default; display: flex; align-items: center; justify-content: center; color: #999; aspect-ratio: 1 / 1.5; }
+    .qual-img { position: relative; aspect-ratio: 1 / 1; overflow: hidden; }
+    .qual-img img { width: 100%; height: 100%; object-fit: fill; display: block; }
+    .zoom-box {
+      position: absolute;
+      left: calc(var(--x) * 100%);
+      top: calc(var(--y) * 100%);
+      width: 25%; height: 12.5%;
+      border: 1.5px solid var(--zoom);
+      pointer-events: none;
+    }
+    .qual-zoom { aspect-ratio: 2 / 1; overflow: hidden; margin-top: 2px; outline: 1.5px solid var(--zoom); outline-offset: -1.5px; }
+    .qual-zoom img {
+      display: block;
+      width: 400%; max-width: none;
+      aspect-ratio: 1 / 1;
+      object-fit: fill;
+      margin-left: calc(var(--x) * -400%);
+      margin-top: calc(var(--y) * -400%);
+    }
+    .qual-cell:hover .qual-img img { filter: brightness(1.08); }
+
+    /* comparison modal */
+    .compare-box { background: #fff; border-radius: 8px; padding: 1rem; max-width: min(92vw, 720px); margin: 0 auto; }
+    .compare-box img-comparison-slider { border-radius: 6px; overflow: hidden; }
+    .compare-controls { display: flex; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; flex-wrap: wrap; }
+
+    /* ─────────────── CT figure ─────────────── */
+    .ct-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; max-width: 900px; margin: 0 auto; }
+    @media (min-width: 769px) { .ct-grid { grid-template-columns: repeat(6, 1fr); } }
+    .ct-cell { margin: 0; text-align: center; }
+    .ct-cell figcaption { font-size: .75rem; min-height: 2.4em; display: flex; align-items: flex-end; justify-content: center; }
+    .ct-cell img { width: 100%; display: block; }
+
+    .coming-tooltip {
+      position: fixed; pointer-events: none;
+      background: #222; color: #fff; font-size: 0.8rem;
+      padding: 0.3em 0.55em; border-radius: 4px; white-space: nowrap;
+      opacity: 0; transition: opacity 0.2s ease; z-index: 10000;
+    }
+  </style>
+</head>
+<body>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">BAM! Bayesian Anything Model: a foundation model for generative computational imaging</h1>
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://scholar.google.com/citations?user=Xmr-06oAAAAJ&hl=en" target="_blank">Alessio Spagnoletti</a><sup>1*</sup>,
+              </span>
+              <span class="author-block">Charlesquin Kemajou Mbakam<sup>2*</sup>,</span>
+              <span class="author-block">Jonathan Spence<sup>2</sup>,</span>
+              <span class="author-block">
+                <a href="https://scholar.google.com/citations?user=e1pFlV0AAAAJ&hl=en" target="_blank">Andrés Almansa</a><sup>1</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://scholar.google.com/citations?user=ep85sxQAAAAJ&hl=en" target="_blank">Marcelo Pereyra</a><sup>2</sup>
+              </span>
+            </div>
+
+            <div class="publication-authors affiliations mt-2">
+              <span class="author-block"><sup>1</sup>Université Paris Cité, CNRS, MAP5 UMR 8145, Paris, France</span><br>
+              <span class="author-block"><sup>2</sup>Heriot-Watt University, MACS &amp; Maxwell Institute for Mathematical Sciences, Edinburgh, UK</span>
+              <span class="eql-cntrb"><small><br><sup>*</sup>Indicates Equal Contribution</small></span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- TODO: replace href="#" and drop the "coming-soon" class once the links exist -->
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark coming-soon">
+                    <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark coming-soon">
+                    <span class="icon"><i class="fab fa-github"></i></span>
+                    <span>Code &amp; weights</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark coming-soon">
+                    <span class="icon"><i class="ai ai-arxiv"></i></span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<!-- Figure 1: interactive before/after mosaic -->
+<section class="hero is-small">
+  <div class="teaser-wrap"><div class="teaser-grid">
+      <div class="teaser-tile t-big">
+        <img-comparison-slider value="50">
+          <img slot="first" src="static/images/teaser/div2k-sr-obs.png" alt="DIV2K SR ×4: observation" loading="lazy">
+          <img slot="second" src="static/images/teaser/div2k-sr-bam.webp" alt="DIV2K SR ×4: BAM posterior sample" loading="lazy">
+        </img-comparison-slider>
+        <span class="tile-tag tag-left">Observation</span><span class="tile-tag tag-right">BAM</span>
+        <span class="tile-label">DIV2K | SR ×4</span>
+      </div>
+      <div class="teaser-tile t-afhq">
+        <img-comparison-slider value="50">
+          <img slot="first" src="static/images/teaser/afhq-deb-obs.webp" alt="AFHQ Gaussian deblurring: observation" loading="lazy">
+          <img slot="second" src="static/images/teaser/afhq-deb-bam.webp" alt="AFHQ Gaussian deblurring: BAM posterior sample" loading="lazy">
+        </img-comparison-slider>
+        <span class="tile-tag tag-left">Observation</span><span class="tile-tag tag-right">BAM</span>
+        <span class="tile-label">AFHQ | Gaussian deblurring</span>
+      </div>
+      <div class="teaser-tile t-jpeg">
+        <img-comparison-slider value="50">
+          <img slot="first" src="static/images/teaser/ffhq-jpeg-obs.webp" alt="FFHQ JPEG (Q = 10): observation" loading="lazy">
+          <img slot="second" src="static/images/teaser/ffhq-jpeg-bam.webp" alt="FFHQ JPEG (Q = 10): BAM posterior sample" loading="lazy">
+        </img-comparison-slider>
+        <span class="tile-tag tag-left">Observation</span><span class="tile-tag tag-right">BAM</span>
+        <span class="tile-label">FFHQ | JPEG (Q = 10)</span>
+      </div>
+      <div class="teaser-tile t-ffhq">
+        <img-comparison-slider value="50">
+          <img slot="first" src="static/images/teaser/ffhq-inp-obs.webp" alt="FFHQ Inpainting: observation" loading="lazy">
+          <img slot="second" src="static/images/teaser/ffhq-inp-bam.webp" alt="FFHQ Inpainting: BAM posterior sample" loading="lazy">
+        </img-comparison-slider>
+        <span class="tile-tag tag-left">Observation</span><span class="tile-tag tag-right">BAM</span>
+        <span class="tile-label">FFHQ | Inpainting</span>
+      </div>
+      <div class="teaser-tile t-kohler">
+        <img-comparison-slider value="50">
+          <img slot="first" src="static/images/teaser/kohler-obs.webp" alt="Köhler Blind motion deblurring: observation" loading="lazy">
+          <img slot="second" src="static/images/teaser/kohler-bam.webp" alt="Köhler Blind motion deblurring: BAM posterior sample" loading="lazy">
+        </img-comparison-slider>
+        <span class="tile-tag tag-left">Observation</span><span class="tile-tag tag-right">BAM</span>
+        <span class="tile-label">Köhler | Blind motion deblurring</span>
+      </div>
+      <div class="teaser-tile t-lsun1">
+        <img-comparison-slider value="50">
+          <img slot="first" src="static/images/teaser/lsun-inp-obs.png" alt="LSUN Inpainting: observation" loading="lazy">
+          <img slot="second" src="static/images/teaser/lsun-inp-bam.png" alt="LSUN Inpainting: BAM posterior sample" loading="lazy">
+        </img-comparison-slider>
+        <span class="tile-tag tag-left">Observation</span><span class="tile-tag tag-right">BAM</span>
+        <span class="tile-label">LSUN | Inpainting</span>
+      </div>
+      <div class="teaser-tile t-lsun2">
+        <img-comparison-slider value="50">
+          <img slot="first" src="static/images/teaser/lsun-sr-obs.png" alt="LSUN SR ×4: observation" loading="lazy">
+          <img slot="second" src="static/images/teaser/lsun-sr-bam.png" alt="LSUN SR ×4: BAM posterior sample" loading="lazy">
+        </img-comparison-slider>
+        <span class="tile-tag tag-left">Observation</span><span class="tile-tag tag-right">BAM</span>
+        <span class="tile-label">LSUN | SR ×4</span>
+      </div>
+  </div></div>
+  <p class="teaser-caption has-text-grey is-size-6 has-text-centered">
+    <b>One small network, many imaging problems, few steps.</b> Drag the sliders to compare each observation (left)
+    with a BAM posterior sample (right). A single 36M-parameter network, with the forward operator supplied at
+    inference time, covers ×4 super-resolution (DIV2K, LSUN), Gaussian deblurring (AFHQ), inpainting (FFHQ, LSUN),
+    non-linear JPEG restoration at Q = 10 (FFHQ) and blind motion deblurring (Köhler), all in 3 steps.
+  </p>
+</section>
+<!-- End Figure 1 -->
+
+<!-- Paper abstract -->
+<section class="section hero is-light mt-5">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Generative models are transforming Bayesian computational imaging, yet the field still lacks physics-aware foundation models. Current practice falls into two camps. Large foundation image models are deployed as plug-and-play priors with zero-shot approximate likelihood guidance, which introduces significant bias and computational cost. Physics-aware generative models avoid this bias, but each is tied to a specific dataset, task and instrument. We introduce BAM (Bayesian Anything Model), a lightweight foundation model for few-step, physics-aware posterior sampling that generalises robustly to unseen data and tasks, zero-shot or with minimal finetuning. BAM upgrades the operator-conditioned Reconstruct Anything Model (RAM) backbone (Terris et al., 2025) into a conditional flow map, so instrument physics is specified at inference time rather than fixed during training. BAM has just 36M parameters and is pre-trained jointly on large image corpora and libraries of forward operators. A single network then draws posterior samples in a few steps, with no likelihood approximation and no guidance weights to tune. Across linear inverse problems on FFHQ, AFHQ, LSUN, DIV2K and the Köhler camera-shake benchmark, BAM outperforms in just 3 steps both specialised models and leading zero-shot methods in sample quality, at a fraction of their computational cost. BAM gives the community an accessible entry point to generative computational imaging, lowers the economic and environmental cost of training imaging models, and opens a new path for research on physics-aware Bayesian computational imaging. Code and weights will be released upon acceptance.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- End paper abstract -->
+
+<!-- Highlights -->
+<section class="section pb-2">
+  <div class="container is-max-desktop">
+    <div class="columns is-mobile is-multiline is-centered">
+      <div class="column is-half-mobile is-one-quarter-tablet"><div class="stat"><div class="value">36M</div><div class="label">parameters, one network for all problems</div></div></div>
+      <div class="column is-half-mobile is-one-quarter-tablet"><div class="stat"><div class="value">3</div><div class="label">network evaluations per posterior sample</div></div></div>
+      <div class="column is-half-mobile is-one-quarter-tablet"><div class="stat"><div class="value">38/40</div><div class="label">settings where a BAM variant has the best LPIPS</div></div></div>
+      <div class="column is-half-mobile is-one-quarter-tablet"><div class="stat"><div class="value">36/40</div><div class="label">settings where a BAM variant has the best CMMD</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Method -->
+<section class="section pt-4" id="method">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Method</h2>
+    <div class="content has-text-justified">
+      <p>
+        We consider imaging problems $y = A x^\star + \sigma_y w$, where the forward operator $A$ and the noise level
+        $\sigma_y$ are known at inference time, and aim to draw samples from the posterior $p(\bm x \mid y, A, \sigma_y)$
+        in a handful of network evaluations. BAM is a <b>conditional flow map</b>: it transports a Gaussian reference
+        $\rho_1 = \mathcal N(0, \sigma_d^2 \Id)$ to the posterior $\rho_0 = p(\bm x \mid y, A, \sigma_y)$, jumping between
+        any two times $t \geq s$ of the probability-flow ODE. It amortises over a wide family of operators and noise levels, so a
+        single model serves the whole family, with no retraining, or at most light finetuning, when the forward model changes.
+      </p>
+    </div>
+  </div>
+
+  <div class="container is-max-widescreen my-5">
+    <figure class="has-text-centered">
+      <img src="static/images/flow-map.svg" alt="Schematic of the BAM conditional flow map" class="wide-figure" style="max-width: 900px; margin: 0 auto;">
+      <figcaption class="figure-caption has-text-grey is-size-6">
+        The conditional flow map $X^\theta_{t,s}$ moves a point from time $t$ to $s \le t$ along the probability flow
+        that carries the Gaussian reference ($t=1$) to the posterior ($t=0$), with conditioning $c = (y_\sigma, \alpha_\sigma A)$.
+        The purple arrow is the finite jump $(s-t)\,v_\theta(x_t, t, s, c)$; the green arrow is the reverse-time tangent
+        $-v_\theta(x_t, t, t, c)$. Paths and densities are illustrative.
+      </figcaption>
+    </figure>
+  </div>
+
+  <div class="container is-max-desktop">
+    <div class="content has-text-justified">
+      <h3 class="title is-5">Physics-aware conditioning</h3>
+      <p>
+        Feeding $(y, A, \sigma_y, t, s)$ directly to a small network is numerically fragile, as $\sigma_y$ and $(t,s)$ span
+        several orders of magnitude. BAM therefore conditions on a rescaled measurement, defined through the stochastic interpolant
+      </p>
+      <div class="eq-block">$$\bm y_\sigma = \alpha_\sigma A \bm x + \varsigma_\sigma \bm w, \qquad \varsigma_\sigma / \alpha_\sigma = \sigma,$$</div>
+      <p>
+        so that $y$ is a realisation of $\bm y_\sigma$ at $\sigma = \sigma_y$ up to the known factor $\alpha_\sigma$. The flow map is parametrised as
+      </p>
+      <div class="eq-block">$$X^\theta_{t,s}(x \mid y_\sigma, \alpha_\sigma A) = x + (s-t)\, v_\theta(x, t, s, y_\sigma, \alpha_\sigma A), \qquad 0 \le s \le t \le 1,$$</div>
+      <p>
+        which enforces the boundary condition $X^\theta_{t,t}(x) = x$ by construction. The velocity $v_\theta$ is a
+        <b>RAM backbone</b> (an operator-conditioned DRUNet with unrolled physics-aware updates) that receives the augmented
+        measurement $[x_t\,;\, y_\sigma]$ and the stacked operator $[(1-t)\Id\,;\, \alpha_\sigma A]$ supplied at inference time;
+        its two noise-level embeddings take $t$ and $s$. $\sigma_y$ enters only through the rescaling, which keeps the model lightweight.
+      </p>
+
+      <h3 class="title is-5">Training: Lagrangian self-distillation</h3>
+      <p>
+        On the diagonal ($t = s$) the velocity is fitted to the interpolant slope, and off the diagonal ($s &lt; t$) the endpoint
+        derivative of the map is matched to the drift of an EMA teacher $\theta^-$ at the transported point:
+      </p>
+      <div class="eq-block">$$\mathcal L_b(\theta) = \mathbb E\big\| v_\theta(\bm x_t, t, t, \bm y_\sigma, \bm A) - (\bm z - \bm x_0) \big\|_2^2,
+        \qquad
+        \mathcal L_{\mathrm{LSD}}(\theta) = \mathbb E\big\| \partial_s X^\theta_{t,s} - \sg\big[v_{\theta^-}(\hat{\bm x}_{t,s}, s, s, \bm y_\sigma, \bm A)\big] \big\|_2^2.$$</div>
+      <p>
+        Images $\bm x$ are drawn from large image corpora and operators $\bm A$ from a library of forward models (super-resolution,
+        Gaussian and motion blur, compressed sensing, inpainting, demosaicing) with $\sigma_y \in [0, 0.05]$. The measurement noise
+        is tied to $t$ through $\sigma(t) = \sigma_{\max}\gamma t / (1-(1-\gamma)t)$, which concentrates capacity where $\bm y_\sigma$
+        and $\bm x_t$ carry comparable noise. The full objective adds an LPIPS term and a contrast term, active only near $s \approx 0$:
+      </p>
+      <div class="eq-block">$$\mathcal L(\theta) = \mathbb E\Big[\lambda_b \ell_b + \lambda_L \ell_{\mathrm{LSD}} + e^{-4s}\big\{\lambda_p \ell_{\mathrm{LPIPS}}(\hat{\bm x}_{t,s}, \bm x_0) + \lambda_c \ell_{\mathrm{ctr}}(\hat{\bm x}_{t,s}, \bm x_0)\big\}\Big].$$</div>
+      <p>No adversarial loss is used at any stage. Starting from the public RAM checkpoint, the baseline BAM is trained for
+        170 hours on 8 H100 GPUs; the fine-tuned variant BAM<sup>★</sup> continues for 16 hours on 2 H100 GPUs per target dataset,
+        still across all problems.</p>
+
+      <h3 class="title is-5">Few-step posterior sampling</h3>
+      <p>
+        Each step re-noises the current iterate to level $t_k$, pairs it with a draw of the measurement interpolant at the
+        matching level $\sigma_k = \sigma(t_k)$, and maps it back to $s = 0$ in a single network evaluation.
+        Independent runs give independent posterior samples.
+      </p>
+    </div>
+
+    <figure class="my-4">
+      <figcaption class="has-text-weight-bold has-text-centered mb-2">Algorithm&nbsp;1:&nbsp;BAM posterior sampling (3 steps)</figcaption>
+      <ol class="algo-code">
+        <li><strong>Given</strong> measurement $y$, operator $A$, noise level $\sigma_y$, schedule $1 = t_1 > t_2 > t_3$, levels $\sigma_k = \sigma(t_k)$, network $v_\theta$.</li>
+        <li>$\bm\varepsilon \sim \mathcal N(0, \Id)$ <span class="comment">(held fixed across steps)</span></li>
+        <li><strong>For</strong> $k = 1, 2, 3$</li>
+        <li class="indent1">$\bm y_{\sigma_k} \gets \alpha_{\sigma_k} y + \sqrt{\varsigma_{\sigma_k}^2 - \alpha_{\sigma_k}^2 \sigma_y^2}\;\bm\varepsilon$ <span class="comment">(add the missing measurement noise)</span></li>
+        <li class="indent1">$\bm z^{(k)} \sim \mathcal N(0, \sigma_d^2 \Id)$</li>
+        <li class="indent1">$\bm x_{t_k} \gets (1-t_k)\,\hat{\bm x}^{(k-1)} + t_k\, \bm z^{(k)}$ <span class="comment">(pure noise when $t_1 = 1$)</span></li>
+        <li class="indent1">$\hat{\bm x}^{(k)} \gets \bm x_{t_k} - t_k\, v_\theta(\bm x_{t_k}, t_k, 0, \bm y_{\sigma_k}, \alpha_{\sigma_k} A)$ <span class="comment">(one NFE: $X^\theta_{t_k,0}$)</span></li>
+        <li><strong>Return</strong> $\hat{\bm x}^{(3)}$</li>
+      </ol>
+      <p class="figure-caption has-text-grey is-size-6">
+        For small $\sigma_y$ the last step is taken at $\sigma_3 = \sigma_y$, where no re-noising is needed. For large $\sigma_y$,
+        BAM sets $\sigma_2 = \sigma_y$ and takes the last step at $\sigma_3 &lt; \sigma_y$, drawing the interpolant by a Brownian
+        bridge between $A\hat{\bm x}^{(2)}$ and the rescaled measurement.
+      </p>
+    </figure>
+  </div>
+</section>
+<!-- End method -->
+
+<!-- Results -->
+<section class="section hero is-light" id="results">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Results</h2>
+
+    <div class="columns is-vcentered">
+      <div class="column is-6">
+        <figure>
+          <img src="static/images/pareto.svg" alt="LPIPS versus reconstruction FLOPs for BAM and baselines" class="wide-figure">
+        </figure>
+      </div>
+      <div class="column is-6">
+        <div class="content has-text-justified">
+          <h3 class="title is-5">State-of-the-art quality at a fraction of the cost</h3>
+          <p>
+            BAM advances the quality–cost Pareto frontier drawn by state-of-the-art methods: better perceptual quality
+            (LPIPS) with fewer FLOPs per 512×512 image and far fewer parameters (bubble area). The same conclusion holds
+            across metrics, inverse problems and datasets.
+          </p>
+          <p>
+            BAM is also robust to post-training quantisation: in INT8 under TensorRT it restores a 512×512 image in
+            80&nbsp;ms instead of 281&nbsp;ms on an NVIDIA A40 (3.5× faster), with a moderate loss in accuracy
+            (PSNR −1.3&nbsp;dB, LPIPS 0.400 → 0.427) and no fine-tuning after quantisation.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="title is-5 mt-5">Reconstruction quality</h3>
+    <div class="content has-text-justified">
+      <p>
+        Across four datasets, five problems and two noise levels, a BAM variant attains the best LPIPS in 38 of 40 settings
+        and the best CMMD in 36 of 40. BAM restores sharp, realistic textures such as fur, hair and foliage while remaining
+        consistent with the measurements. RAM, trained as an MMSE estimator, often attains higher PSNR at the cost of smoother
+        textures, while zero-shot and latent-space methods show noise artifacts or hallucinate content inconsistent with the observation.
+      </p>
+    </div>
+  </div>
+
+  <div class="container is-max-widescreen mt-4">
+    <p class="has-text-weight-bold has-text-centered mb-2">DIV2K and FFHQ restoration at σ<sub>y</sub> = 0.05</p>
+<div class="table-container"><table class="table results-table is-narrow is-hoverable" id="tab-main">
+<thead><tr><th rowspan="2">Method</th><th rowspan="2" class="num">NFEs</th>
+<th colspan="4" class="grp">DIV2K</th>
+<th colspan="4" class="grp">FFHQ</th>
+</tr><tr>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+</tr></thead>
+<tbody><tr class="sec"><td colspan="10"><b>Gaussian deblurring</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">24.48</td><td class="num"><b>0.35</b></td><td class="num"><u>0.06</u></td><td class="num"><b>34.4</b></td><td class="num grp-start">29.63</td><td class="num"><u>0.25</u></td><td class="num">0.10</td><td class="num"><u>45.0</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">24.44</td><td class="num"><b>0.35</b></td><td class="num"><b>0.04</b></td><td class="num"><u>35.6</u></td><td class="num grp-start">30.16</td><td class="num"><u>0.25</u></td><td class="num"><u>0.08</u></td><td class="num">51.6</td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start"><u>25.63</u></td><td class="num">0.43</td><td class="num">0.44</td><td class="num">52.6</td><td class="num grp-start"><u>30.54</u></td><td class="num">0.35</td><td class="num">1.15</td><td class="num">94.7</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>26.00</b></td><td class="num"><u>0.42</u></td><td class="num">0.34</td><td class="num">47.0</td><td class="num grp-start"><b>31.53</b></td><td class="num">0.34</td><td class="num">1.07</td><td class="num">92.4</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">23.55</td><td class="num">0.54</td><td class="num">0.49</td><td class="num">71.9</td><td class="num grp-start">23.40</td><td class="num">0.46</td><td class="num">1.17</td><td class="num">128.3</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">17.20</td><td class="num">0.62</td><td class="num">1.84</td><td class="num">298.8</td><td class="num grp-start">24.92</td><td class="num">0.38</td><td class="num">0.25</td><td class="num">91.8</td></tr>
+<tr><td>I<sup>2</sup>SB</td><td class="num">50</td><td class="num grp-start">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num grp-start">30.24</td><td class="num"><b>0.24</b></td><td class="num"><b>0.02</b></td><td class="num"><b>44.2</b></td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num grp-start">29.30</td><td class="num">0.29</td><td class="num">0.72</td><td class="num">67.3</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Super-resolution</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">24.30</td><td class="num"><b>0.36</b></td><td class="num"><b>0.08</b></td><td class="num"><b>39.6</b></td><td class="num grp-start">28.84</td><td class="num"><b>0.27</b></td><td class="num"><b>0.19</b></td><td class="num"><b>50.4</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">23.56</td><td class="num"><u>0.37</u></td><td class="num"><u>0.09</u></td><td class="num"><u>41.1</u></td><td class="num grp-start">29.37</td><td class="num"><b>0.27</b></td><td class="num"><b>0.19</b></td><td class="num"><u>62.4</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start"><u>25.79</u></td><td class="num">0.43</td><td class="num">0.26</td><td class="num">74.1</td><td class="num grp-start"><b>31.15</b></td><td class="num">0.36</td><td class="num">1.02</td><td class="num">107.1</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>25.88</b></td><td class="num">0.42</td><td class="num">0.27</td><td class="num">51.7</td><td class="num grp-start"><u>31.01</u></td><td class="num">0.35</td><td class="num">1.52</td><td class="num">93.0</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">22.82</td><td class="num">0.54</td><td class="num">0.59</td><td class="num">95.3</td><td class="num grp-start">23.18</td><td class="num">0.53</td><td class="num">0.90</td><td class="num">146.3</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">16.53</td><td class="num">0.64</td><td class="num">2.04</td><td class="num">308.4</td><td class="num grp-start">25.04</td><td class="num">0.37</td><td class="num"><u>0.20</u></td><td class="num">80.7</td></tr>
+<tr><td>I<sup>2</sup>SB</td><td class="num">50</td><td class="num grp-start">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num grp-start">26.82</td><td class="num">0.39</td><td class="num">1.02</td><td class="num">148.8</td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num grp-start">28.16</td><td class="num"><u>0.31</u></td><td class="num">0.30</td><td class="num">82.2</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Inpainting</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><u>26.61</u></td><td class="num"><b>0.27</b></td><td class="num"><b>0.02</b></td><td class="num"><b>20.5</b></td><td class="num grp-start">31.50</td><td class="num"><u>0.23</u></td><td class="num"><u>0.08</u></td><td class="num"><b>32.1</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">25.66</td><td class="num"><b>0.27</b></td><td class="num"><u>0.03</u></td><td class="num"><u>21.0</u></td><td class="num grp-start"><u>31.57</u></td><td class="num"><b>0.20</b></td><td class="num"><b>0.05</b></td><td class="num"><u>32.4</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">23.52</td><td class="num">0.41</td><td class="num">0.30</td><td class="num">66.9</td><td class="num grp-start">25.55</td><td class="num">0.39</td><td class="num">1.53</td><td class="num">126.5</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>27.61</b></td><td class="num"><u>0.32</u></td><td class="num">0.18</td><td class="num">35.5</td><td class="num grp-start"><b>32.40</b></td><td class="num">0.29</td><td class="num">1.12</td><td class="num">56.5</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">11.25</td><td class="num">0.71</td><td class="num">2.01</td><td class="num">282.4</td><td class="num grp-start">13.44</td><td class="num">0.79</td><td class="num">2.63</td><td class="num">305.0</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">12.92</td><td class="num">0.73</td><td class="num">2.91</td><td class="num">382.4</td><td class="num grp-start">17.46</td><td class="num">0.52</td><td class="num">1.00</td><td class="num">139.4</td></tr>
+<tr><td>I<sup>2</sup>SB</td><td class="num">50</td><td class="num grp-start">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num grp-start">18.89</td><td class="num">0.58</td><td class="num">1.93</td><td class="num">174.2</td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start">–</td><td class="num">–</td><td class="num">–</td><td class="num">–</td><td class="num grp-start">29.29</td><td class="num">0.25</td><td class="num">0.21</td><td class="num">45.54</td></tr>
+</tbody>
+</table></div>
+    <p class="figure-caption has-text-grey is-size-6 has-text-centered">
+      PSNR (dB, ↑), LPIPS (↓), CMMD (↓) and FID (↓). BAM variants use three steps; BAM<sup>★</sup> and RAM<sup>★</sup> denote
+      finetuning. <b>Bold</b> and <u>underline</u> mark the best and second-best values for each dataset and problem; – denotes an unavailable result.
+    </p>
+  </div>
+</section>
+
+<section class="section" id="qualitative">
+  <div class="container is-max-widescreen">
+    <h3 class="title is-4 has-text-centered">Visual comparisons</h3>
+    <p class="has-text-centered has-text-grey mb-4">
+      BAM and BAM<sup>★</sup> use three steps. Yellow boxes mark the region magnified 4× below each image.
+      <b>Click any image</b> to compare it against another method with a slider.
+    </p>
+<div class="tabs is-centered is-toggle is-small" data-tabs="qual"><ul><li class="is-active"><a data-tab="qual-DIV2K">DIV2K</a></li><li class=""><a data-tab="qual-FFHQ">FFHQ</a></li><li class=""><a data-tab="qual-AFHQ">AFHQ</a></li></ul></div>
+<div data-panes="qual"><div class="tab-pane is-active" id="qual-DIV2K"><div class="qual-scroll"><div class="qual-grid" style="--ncol:8">
+<div class="qual-head">Observation</div>
+<div class="qual-head">BAM</div>
+<div class="qual-head">BAM<sup>★</sup></div>
+<div class="qual-head">RAM</div>
+<div class="qual-head">RAM<sup>★</sup></div>
+<div class="qual-head">SILO</div>
+<div class="qual-head">TReg</div>
+<div class="qual-head">GT</div>
+<div class="qual-row-title"><b>Gaussian deblurring</b> σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="0" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c0.webp" alt="DIV2K: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c0.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="1" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c1.webp" alt="DIV2K: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="2" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c2.webp" alt="DIV2K: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="3" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c3.webp" alt="DIV2K: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="4" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c4.webp" alt="DIV2K: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="5" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c5.webp" alt="DIV2K: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="6" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c6.webp" alt="DIV2K: TReg" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-0" data-idx="7" style="--x:0.08;--y:0.595" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r0-c7.webp" alt="DIV2K: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r0-c7.webp" alt="" loading="lazy"></div></div>
+<div class="qual-row-title"><b>SR ×4</b> σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="0" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c0.png" alt="DIV2K: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c0.png" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="1" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c1.webp" alt="DIV2K: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="2" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c2.webp" alt="DIV2K: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="3" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c3.webp" alt="DIV2K: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="4" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c4.webp" alt="DIV2K: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="5" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c5.webp" alt="DIV2K: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="6" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c6.webp" alt="DIV2K: TReg" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-1" data-idx="7" style="--x:0.46;--y:0.335" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r1-c7.webp" alt="DIV2K: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r1-c7.webp" alt="" loading="lazy"></div></div>
+<div class="qual-row-title"><b>Inpainting</b> σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="0" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c0.webp" alt="DIV2K: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c0.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="1" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c1.webp" alt="DIV2K: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="2" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c2.webp" alt="DIV2K: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="3" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c3.webp" alt="DIV2K: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="4" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c4.webp" alt="DIV2K: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="5" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c5.webp" alt="DIV2K: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="6" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c6.webp" alt="DIV2K: TReg" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="DIV2K-2" data-idx="7" style="--x:0.53;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/div2k/r2-c7.webp" alt="DIV2K: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/div2k/r2-c7.webp" alt="" loading="lazy"></div></div>
+</div></div></div>
+<div class="tab-pane" id="qual-FFHQ"><div class="qual-scroll"><div class="qual-grid" style="--ncol:9">
+<div class="qual-head">Observation</div>
+<div class="qual-head">BAM</div>
+<div class="qual-head">BAM<sup>★</sup></div>
+<div class="qual-head">RAM</div>
+<div class="qual-head">RAM<sup>★</sup></div>
+<div class="qual-head">SILO</div>
+<div class="qual-head">UD2M</div>
+<div class="qual-head">I2SB</div>
+<div class="qual-head">GT</div>
+<div class="qual-row-title"><b>FFHQ — Gaussian deblurring</b>, σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="0" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c0.webp" alt="FFHQ: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c0.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="1" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c1.webp" alt="FFHQ: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="2" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c2.webp" alt="FFHQ: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="3" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c3.webp" alt="FFHQ: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="4" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c4.webp" alt="FFHQ: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="5" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c5.webp" alt="FFHQ: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="6" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c6.webp" alt="FFHQ: UD2M" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="7" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c7.webp" alt="FFHQ: I2SB" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c7.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-0" data-idx="8" style="--x:0.27;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r0-c8.webp" alt="FFHQ: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r0-c8.webp" alt="" loading="lazy"></div></div>
+<div class="qual-row-title"><b>FFHQ — SR ×4</b>, σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="0" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c0.png" alt="FFHQ: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c0.png" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="1" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c1.webp" alt="FFHQ: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="2" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c2.webp" alt="FFHQ: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="3" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c3.webp" alt="FFHQ: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="4" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c4.webp" alt="FFHQ: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="5" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c5.webp" alt="FFHQ: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="6" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c6.webp" alt="FFHQ: UD2M" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="7" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c7.webp" alt="FFHQ: I2SB" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c7.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-1" data-idx="8" style="--x:0.34;--y:0.395" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r1-c8.webp" alt="FFHQ: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r1-c8.webp" alt="" loading="lazy"></div></div>
+<div class="qual-row-title"><b>FFHQ — JPEG, Q = 10</b>, pre-compression σ<sub>JPEG</sub> = 0.01</div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="0" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c0.webp" alt="FFHQ: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c0.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="1" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c1.webp" alt="FFHQ: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="2" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c2.webp" alt="FFHQ: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="3" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c3.webp" alt="FFHQ: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="4" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c4.webp" alt="FFHQ: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="5" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c5.webp" alt="FFHQ: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="6" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c6.webp" alt="FFHQ: UD2M" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell missing"><span>–</span></div>
+<div class="qual-cell" data-ex="FFHQ-2" data-idx="7" style="--x:0.39;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/ffhq/r2-c8.webp" alt="FFHQ: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/ffhq/r2-c8.webp" alt="" loading="lazy"></div></div>
+</div></div></div>
+<div class="tab-pane" id="qual-AFHQ"><div class="qual-scroll"><div class="qual-grid" style="--ncol:10">
+<div class="qual-head">Observation</div>
+<div class="qual-head">BAM</div>
+<div class="qual-head">BAM<sup>★</sup></div>
+<div class="qual-head">RAM</div>
+<div class="qual-head">RAM<sup>★</sup></div>
+<div class="qual-head">LATINO</div>
+<div class="qual-head">L-PRO</div>
+<div class="qual-head">TReg</div>
+<div class="qual-head">SILO</div>
+<div class="qual-head">GT</div>
+<div class="qual-row-title"><b>AFHQ — Inpainting</b>, σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="0" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c0.webp" alt="AFHQ: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c0.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="1" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c1.webp" alt="AFHQ: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="2" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c2.webp" alt="AFHQ: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="3" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c3.webp" alt="AFHQ: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="4" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c4.webp" alt="AFHQ: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="5" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c5.webp" alt="AFHQ: LATINO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="6" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c6.webp" alt="AFHQ: L-PRO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="7" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c7.webp" alt="AFHQ: TReg" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c7.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="8" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c8.webp" alt="AFHQ: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c8.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-0" data-idx="9" style="--x:0.37;--y:0.435" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r0-c9.webp" alt="AFHQ: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r0-c9.webp" alt="" loading="lazy"></div></div>
+<div class="qual-row-title"><b>AFHQ — Demosaicing</b>, σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="0" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c0.webp" alt="AFHQ: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c0.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="1" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c1.webp" alt="AFHQ: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="2" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c2.webp" alt="AFHQ: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="3" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c3.webp" alt="AFHQ: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="4" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c4.webp" alt="AFHQ: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="5" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c5.webp" alt="AFHQ: LATINO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="6" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c6.webp" alt="AFHQ: L-PRO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="7" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c7.webp" alt="AFHQ: TReg" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c7.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="8" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c8.webp" alt="AFHQ: SILO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c8.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-1" data-idx="9" style="--x:0.24;--y:0.425" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r1-c9.webp" alt="AFHQ: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r1-c9.webp" alt="" loading="lazy"></div></div>
+<div class="qual-row-title"><b>AFHQ — Compressed sensing</b>, σ<sub>y</sub> = 0.05</div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="0" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c0.webp" alt="AFHQ: Observation" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c0.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="1" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c1.webp" alt="AFHQ: BAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c1.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="2" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c2.webp" alt="AFHQ: BAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c2.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="3" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c3.webp" alt="AFHQ: RAM" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c3.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="4" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c4.webp" alt="AFHQ: RAM<sup>★</sup>" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c4.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="5" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c5.webp" alt="AFHQ: LATINO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c5.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="6" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c6.webp" alt="AFHQ: L-PRO" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c6.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="7" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c7.webp" alt="AFHQ: TReg" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c7.webp" alt="" loading="lazy"></div></div>
+<div class="qual-cell missing"><span>–</span></div>
+<div class="qual-cell" data-ex="AFHQ-2" data-idx="8" style="--x:0.22;--y:0.415" title="Click to compare"><div class="qual-img"><img src="static/images/results/afhq/r2-c9.webp" alt="AFHQ: GT" loading="lazy"><i class="zoom-box"></i></div><div class="qual-zoom"><img src="static/images/results/afhq/r2-c9.webp" alt="" loading="lazy"></div></div>
+</div></div></div></div>
+  </div>
+</section>
+
+<section class="section hero is-light" id="tables">
+  <div class="container is-max-widescreen">
+    <h3 class="title is-4 has-text-centered">Full quantitative comparison</h3>
+    <p class="has-text-centered has-text-grey mb-4">
+      All five problems BAM is trained on, at σ<sub>y</sub> ∈ {0.025, 0.05}. AFHQ and LSUN bedroom are out-of-distribution
+      for the baseline BAM. PSNR (dB, ↑), LPIPS (↓), CMMD (↓), FID (↓); <b>bold</b> / <u>underline</u>: best / second-best
+      value per problem, noise level and metric.
+    </p>
+<div class="tabs is-centered is-toggle is-small" data-tabs="full-tables"><ul><li class="is-active"><a data-tab="full-DIV2K">DIV2K</a></li><li class=""><a data-tab="full-FFHQ">FFHQ</a></li><li class=""><a data-tab="full-AFHQ">AFHQ</a></li><li class=""><a data-tab="full-LSUN">LSUN</a></li></ul></div>
+<div data-panes="full-tables"><div class="tab-pane is-active" id="full-DIV2K"><p class="table-note">DIV2K: 64 test images. BAM and BAM<sup>★</sup> use three steps.</p><div class="table-container"><table class="table results-table is-narrow is-hoverable" id="tab-DIV2K">
+<thead><tr><th rowspan="2">Method</th><th rowspan="2" class="num">NFEs</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.025</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.05</th>
+</tr><tr>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+</tr></thead>
+<tbody><tr class="sec"><td colspan="10"><b>Deblurring</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><u>25.01</u></td><td class="num"><b>0.334</b></td><td class="num"><u>0.04</u></td><td class="num"><b>33.51</b></td><td class="num grp-start"><u>24.48</u></td><td class="num"><b>0.349</b></td><td class="num"><u>0.06</u></td><td class="num"><b>34.43</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">24.91</td><td class="num"><u>0.339</u></td><td class="num"><b>0.03</b></td><td class="num"><u>33.80</u></td><td class="num grp-start">24.44</td><td class="num"><u>0.353</u></td><td class="num"><b>0.04</b></td><td class="num"><u>35.59</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start"><b>26.08</b></td><td class="num">0.401</td><td class="num">0.37</td><td class="num">41.35</td><td class="num grp-start"><b>25.63</b></td><td class="num">0.427</td><td class="num">0.44</td><td class="num">52.55</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">23.29</td><td class="num">0.473</td><td class="num">0.28</td><td class="num">74.62</td><td class="num grp-start">22.00</td><td class="num">0.514</td><td class="num">0.39</td><td class="num">100.27</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">24.07</td><td class="num">0.454</td><td class="num">0.35</td><td class="num">66.02</td><td class="num grp-start">23.55</td><td class="num">0.536</td><td class="num">0.49</td><td class="num">71.90</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">22.43</td><td class="num">0.485</td><td class="num">0.34</td><td class="num">83.89</td><td class="num grp-start">21.85</td><td class="num">0.515</td><td class="num">0.40</td><td class="num">102.21</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">17.56</td><td class="num">0.614</td><td class="num">1.72</td><td class="num">287.03</td><td class="num grp-start">17.20</td><td class="num">0.624</td><td class="num">1.84</td><td class="num">298.80</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Super-resolution</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><u>24.92</u></td><td class="num"><b>0.343</b></td><td class="num"><b>0.06</b></td><td class="num"><b>36.80</b></td><td class="num grp-start"><u>24.30</u></td><td class="num"><b>0.362</b></td><td class="num"><b>0.08</b></td><td class="num"><b>39.55</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">24.19</td><td class="num"><u>0.354</u></td><td class="num"><b>0.06</b></td><td class="num"><u>36.95</u></td><td class="num grp-start">23.56</td><td class="num"><u>0.373</u></td><td class="num"><u>0.09</u></td><td class="num"><u>41.12</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start"><b>26.49</b></td><td class="num">0.397</td><td class="num"><u>0.20</u></td><td class="num">50.92</td><td class="num grp-start"><b>25.79</b></td><td class="num">0.430</td><td class="num">0.26</td><td class="num">74.12</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">24.36</td><td class="num">0.478</td><td class="num">0.37</td><td class="num">57.15</td><td class="num grp-start">22.70</td><td class="num">0.542</td><td class="num">0.56</td><td class="num">97.24</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">24.49</td><td class="num">0.476</td><td class="num">0.38</td><td class="num">54.11</td><td class="num grp-start">22.82</td><td class="num">0.543</td><td class="num">0.59</td><td class="num">95.31</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">22.07</td><td class="num">0.497</td><td class="num">0.39</td><td class="num">76.52</td><td class="num grp-start">20.73</td><td class="num">0.565</td><td class="num">0.55</td><td class="num">112.77</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">17.04</td><td class="num">0.631</td><td class="num">1.99</td><td class="num">295.67</td><td class="num grp-start">16.53</td><td class="num">0.641</td><td class="num">2.04</td><td class="num">308.43</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Inpainting</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><b>27.31</b></td><td class="num"><b>0.224</b></td><td class="num"><b>0.01</b></td><td class="num"><b>17.35</b></td><td class="num grp-start"><b>26.61</b></td><td class="num"><b>0.267</b></td><td class="num"><b>0.02</b></td><td class="num"><b>20.46</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>26.56</u></td><td class="num"><u>0.233</u></td><td class="num"><u>0.02</u></td><td class="num"><u>17.73</u></td><td class="num grp-start"><u>25.66</u></td><td class="num"><u>0.272</u></td><td class="num"><u>0.03</u></td><td class="num"><u>21.01</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">23.61</td><td class="num">0.399</td><td class="num">0.29</td><td class="num">61.78</td><td class="num grp-start">23.52</td><td class="num">0.412</td><td class="num">0.30</td><td class="num">66.93</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">15.22</td><td class="num">0.692</td><td class="num">1.74</td><td class="num">229.43</td><td class="num grp-start">14.45</td><td class="num">0.704</td><td class="num">1.76</td><td class="num">224.50</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">13.73</td><td class="num">0.678</td><td class="num">1.79</td><td class="num">270.42</td><td class="num grp-start">11.25</td><td class="num">0.706</td><td class="num">2.01</td><td class="num">282.41</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">15.15</td><td class="num">0.727</td><td class="num">1.47</td><td class="num">287.30</td><td class="num grp-start">14.48</td><td class="num">0.748</td><td class="num">1.67</td><td class="num">299.14</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">13.08</td><td class="num">0.724</td><td class="num">2.85</td><td class="num">378.42</td><td class="num grp-start">12.92</td><td class="num">0.729</td><td class="num">2.91</td><td class="num">382.44</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Demosaicing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><b>33.37</b></td><td class="num"><b>0.121</b></td><td class="num"><b>0.01</b></td><td class="num"><b>7.38</b></td><td class="num grp-start"><b>30.48</b></td><td class="num"><b>0.194</b></td><td class="num"><b>0.02</b></td><td class="num"><b>12.68</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>32.61</u></td><td class="num"><u>0.127</u></td><td class="num"><b>0.01</b></td><td class="num"><u>8.51</u></td><td class="num grp-start"><u>29.85</u></td><td class="num"><u>0.196</u></td><td class="num"><b>0.02</b></td><td class="num"><u>14.02</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">30.09</td><td class="num">0.341</td><td class="num"><u>0.20</u></td><td class="num">53.56</td><td class="num grp-start">28.75</td><td class="num">0.385</td><td class="num"><u>0.26</u></td><td class="num">70.95</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">18.08</td><td class="num">0.578</td><td class="num">1.52</td><td class="num">199.76</td><td class="num grp-start">15.26</td><td class="num">0.642</td><td class="num">1.88</td><td class="num">263.70</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">18.58</td><td class="num">0.531</td><td class="num">1.28</td><td class="num">163.41</td><td class="num grp-start">15.42</td><td class="num">0.610</td><td class="num">1.67</td><td class="num">248.64</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">19.57</td><td class="num">0.529</td><td class="num">0.38</td><td class="num">101.76</td><td class="num grp-start">18.28</td><td class="num">0.594</td><td class="num">0.59</td><td class="num">135.35</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">14.92</td><td class="num">0.717</td><td class="num">3.19</td><td class="num">380.73</td><td class="num grp-start">14.63</td><td class="num">0.723</td><td class="num">3.00</td><td class="num">389.20</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Compressed sensing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><b>30.63</b></td><td class="num"><b>0.172</b></td><td class="num"><b>0.01</b></td><td class="num"><b>12.86</b></td><td class="num grp-start"><b>28.87</b></td><td class="num"><b>0.221</b></td><td class="num"><b>0.02</b></td><td class="num"><b>16.84</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>30.22</u></td><td class="num"><u>0.181</u></td><td class="num"><u>0.02</u></td><td class="num"><u>13.73</u></td><td class="num grp-start"><u>28.36</u></td><td class="num"><u>0.230</u></td><td class="num"><u>0.03</u></td><td class="num"><u>18.48</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">23.39</td><td class="num">0.386</td><td class="num">0.35</td><td class="num">42.74</td><td class="num grp-start">23.20</td><td class="num">0.422</td><td class="num">0.47</td><td class="num">49.31</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">16.08</td><td class="num">0.660</td><td class="num">2.18</td><td class="num">250.92</td><td class="num grp-start">13.71</td><td class="num">0.700</td><td class="num">2.24</td><td class="num">249.40</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">16.24</td><td class="num">0.633</td><td class="num">1.86</td><td class="num">248.34</td><td class="num grp-start">13.16</td><td class="num">0.679</td><td class="num">2.08</td><td class="num">275.27</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">17.10</td><td class="num">0.659</td><td class="num">1.05</td><td class="num">195.95</td><td class="num grp-start">16.27</td><td class="num">0.691</td><td class="num">1.22</td><td class="num">224.85</td></tr>
+</tbody>
+</table></div></div>
+<div class="tab-pane" id="full-FFHQ"><p class="table-note">FFHQ: 64 test images. BAM and BAM<sup>★</sup> use three steps.</p><div class="table-container"><table class="table results-table is-narrow is-hoverable" id="tab-FFHQ">
+<thead><tr><th rowspan="2">Method</th><th rowspan="2" class="num">NFEs</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.025</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.05</th>
+</tr><tr>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+</tr></thead>
+<tbody><tr class="sec"><td colspan="10"><b>Deblurring</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">30.63</td><td class="num">0.232</td><td class="num">0.09</td><td class="num"><u>40.63</u></td><td class="num grp-start">29.63</td><td class="num">0.250</td><td class="num">0.10</td><td class="num"><u>44.98</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">31.17</td><td class="num"><u>0.225</u></td><td class="num"><u>0.08</u></td><td class="num">47.33</td><td class="num grp-start">30.16</td><td class="num"><u>0.245</u></td><td class="num"><u>0.08</u></td><td class="num">51.61</td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">31.07</td><td class="num">0.327</td><td class="num">0.94</td><td class="num">83.37</td><td class="num grp-start"><u>30.54</u></td><td class="num">0.351</td><td class="num">1.15</td><td class="num">94.74</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>32.31</b></td><td class="num">0.316</td><td class="num">0.85</td><td class="num">82.58</td><td class="num grp-start"><b>31.53</b></td><td class="num">0.341</td><td class="num">1.07</td><td class="num">92.38</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">25.08</td><td class="num">0.377</td><td class="num">0.62</td><td class="num">100.28</td><td class="num grp-start">22.72</td><td class="num">0.428</td><td class="num">0.85</td><td class="num">119.48</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">25.89</td><td class="num">0.395</td><td class="num">0.82</td><td class="num">111.25</td><td class="num grp-start">23.40</td><td class="num">0.456</td><td class="num">1.17</td><td class="num">128.26</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">25.16</td><td class="num">0.394</td><td class="num">0.82</td><td class="num">112.07</td><td class="num grp-start">24.28</td><td class="num">0.422</td><td class="num">0.73</td><td class="num">117.41</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">25.80</td><td class="num">0.372</td><td class="num">0.38</td><td class="num">92.87</td><td class="num grp-start">24.92</td><td class="num">0.375</td><td class="num">0.25</td><td class="num">91.84</td></tr>
+<tr><td>I<sup>2</sup>SB</td><td class="num">50</td><td class="num grp-start"><u>31.20</u></td><td class="num"><b>0.221</b></td><td class="num"><b>0.01</b></td><td class="num"><b>36.82</b></td><td class="num grp-start">30.24</td><td class="num"><b>0.240</b></td><td class="num"><b>0.02</b></td><td class="num"><b>44.21</b></td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start">29.39</td><td class="num">0.278</td><td class="num">0.83</td><td class="num">65.87</td><td class="num grp-start">29.30</td><td class="num">0.288</td><td class="num">0.72</td><td class="num">67.39</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Super-resolution</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">29.99</td><td class="num"><u>0.249</u></td><td class="num"><b>0.13</b></td><td class="num"><u>45.48</u></td><td class="num grp-start">28.84</td><td class="num"><u>0.272</u></td><td class="num"><b>0.19</b></td><td class="num"><b>50.42</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">30.48</td><td class="num"><b>0.247</b></td><td class="num"><b>0.13</b></td><td class="num">56.46</td><td class="num grp-start">29.37</td><td class="num"><b>0.268</b></td><td class="num"><b>0.19</b></td><td class="num"><u>62.38</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start"><b>32.49</b></td><td class="num">0.322</td><td class="num">0.60</td><td class="num">87.48</td><td class="num grp-start"><b>31.15</b></td><td class="num">0.358</td><td class="num">1.02</td><td class="num">107.12</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><u>32.36</u></td><td class="num">0.313</td><td class="num">0.86</td><td class="num">80.55</td><td class="num grp-start"><u>31.01</u></td><td class="num">0.352</td><td class="num">1.52</td><td class="num">93.02</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">25.53</td><td class="num">0.419</td><td class="num">0.66</td><td class="num">99.47</td><td class="num grp-start">22.18</td><td class="num">0.510</td><td class="num">1.13</td><td class="num">141.33</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">26.67</td><td class="num">0.425</td><td class="num">0.58</td><td class="num">107.27</td><td class="num grp-start">23.18</td><td class="num">0.529</td><td class="num">0.90</td><td class="num">146.27</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">24.35</td><td class="num">0.447</td><td class="num">0.63</td><td class="num">103.75</td><td class="num grp-start">22.28</td><td class="num">0.518</td><td class="num">0.80</td><td class="num">122.72</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">26.12</td><td class="num">0.333</td><td class="num">0.20</td><td class="num">71.76</td><td class="num grp-start">25.04</td><td class="num">0.371</td><td class="num"><u>0.20</u></td><td class="num">80.74</td></tr>
+<tr><td>I<sup>2</sup>SB</td><td class="num">50</td><td class="num grp-start">26.20</td><td class="num">0.387</td><td class="num">1.11</td><td class="num">151.20</td><td class="num grp-start">26.82</td><td class="num">0.393</td><td class="num">1.02</td><td class="num">148.82</td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start">29.63</td><td class="num">0.277</td><td class="num"><u>0.18</u></td><td class="num"><b>97.69</b></td><td class="num grp-start">28.16</td><td class="num">0.305</td><td class="num">0.30</td><td class="num">82.25</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Inpainting</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">32.90</td><td class="num"><u>0.174</u></td><td class="num"><b>0.04</b></td><td class="num"><u>21.30</u></td><td class="num grp-start">31.50</td><td class="num"><u>0.228</u></td><td class="num"><u>0.08</u></td><td class="num"><b>32.09</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">32.93</td><td class="num"><b>0.165</b></td><td class="num"><b>0.04</b></td><td class="num">24.69</td><td class="num grp-start"><u>31.57</u></td><td class="num"><b>0.201</b></td><td class="num"><b>0.05</b></td><td class="num"><u>32.40</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">25.59</td><td class="num">0.399</td><td class="num">1.97</td><td class="num">148.63</td><td class="num grp-start">25.55</td><td class="num">0.386</td><td class="num">1.53</td><td class="num">126.45</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>33.36</b></td><td class="num">0.249</td><td class="num">0.77</td><td class="num">43.27</td><td class="num grp-start"><b>32.40</b></td><td class="num">0.288</td><td class="num">1.12</td><td class="num">56.50</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">13.98</td><td class="num">0.773</td><td class="num">3.25</td><td class="num">247.94</td><td class="num grp-start">13.43</td><td class="num">0.776</td><td class="num">3.27</td><td class="num">248.21</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">13.87</td><td class="num">0.780</td><td class="num">2.53</td><td class="num">272.34</td><td class="num grp-start">13.44</td><td class="num">0.789</td><td class="num">2.63</td><td class="num">304.99</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">14.46</td><td class="num">0.742</td><td class="num">2.71</td><td class="num">224.36</td><td class="num grp-start">13.74</td><td class="num">0.756</td><td class="num">2.80</td><td class="num">237.75</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">18.55</td><td class="num">0.497</td><td class="num">0.87</td><td class="num">133.55</td><td class="num grp-start">17.46</td><td class="num">0.517</td><td class="num">1.00</td><td class="num">139.38</td></tr>
+<tr><td>I<sup>2</sup>SB</td><td class="num">50</td><td class="num grp-start">22.38</td><td class="num">0.491</td><td class="num">1.35</td><td class="num">134.48</td><td class="num grp-start">18.89</td><td class="num">0.584</td><td class="num">1.93</td><td class="num">174.26</td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start"><u>33.21</u></td><td class="num">0.216</td><td class="num"><u>0.20</u></td><td class="num"><b>46.81</b></td><td class="num grp-start">29.29</td><td class="num">0.254</td><td class="num">0.21</td><td class="num">45.54</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Demosaicing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">36.45</td><td class="num"><u>0.119</u></td><td class="num"><b>0.03</b></td><td class="num"><b>10.95</b></td><td class="num grp-start">33.38</td><td class="num"><u>0.202</u></td><td class="num"><u>0.05</u></td><td class="num"><u>23.77</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>36.49</u></td><td class="num"><b>0.114</b></td><td class="num"><u>0.04</u></td><td class="num"><u>12.70</u></td><td class="num grp-start"><u>33.94</u></td><td class="num"><b>0.167</b></td><td class="num"><b>0.04</b></td><td class="num"><b>19.25</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">31.95</td><td class="num">0.333</td><td class="num">0.57</td><td class="num">101.48</td><td class="num grp-start">30.78</td><td class="num">0.370</td><td class="num">0.66</td><td class="num">110.64</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>37.36</b></td><td class="num">0.161</td><td class="num">0.34</td><td class="num">18.74</td><td class="num grp-start"><b>35.07</b></td><td class="num">0.226</td><td class="num">0.46</td><td class="num">32.27</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">17.47</td><td class="num">0.667</td><td class="num">2.73</td><td class="num">199.36</td><td class="num grp-start">14.16</td><td class="num">0.716</td><td class="num">3.08</td><td class="num">214.16</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">18.19</td><td class="num">0.635</td><td class="num">1.76</td><td class="num">170.99</td><td class="num grp-start">13.12</td><td class="num">0.743</td><td class="num">2.08</td><td class="num">255.00</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">21.15</td><td class="num">0.547</td><td class="num">1.37</td><td class="num">125.35</td><td class="num grp-start">18.87</td><td class="num">0.626</td><td class="num">1.78</td><td class="num">159.45</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">20.26</td><td class="num">0.510</td><td class="num">1.43</td><td class="num">137.00</td><td class="num grp-start">21.04</td><td class="num">0.472</td><td class="num">0.85</td><td class="num">118.79</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Compressed sensing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><u>34.58</u></td><td class="num"><u>0.151</u></td><td class="num"><b>0.03</b></td><td class="num"><b>16.37</b></td><td class="num grp-start"><u>32.41</u></td><td class="num"><u>0.208</u></td><td class="num"><u>0.06</u></td><td class="num"><u>25.52</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><b>34.91</b></td><td class="num"><b>0.145</b></td><td class="num"><b>0.03</b></td><td class="num"><u>19.17</u></td><td class="num grp-start"><b>32.72</b></td><td class="num"><b>0.185</b></td><td class="num"><b>0.04</b></td><td class="num"><b>25.02</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">24.47</td><td class="num">0.411</td><td class="num">1.17</td><td class="num">75.17</td><td class="num grp-start">24.35</td><td class="num">0.461</td><td class="num">1.21</td><td class="num">88.65</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start">33.74</td><td class="num">0.262</td><td class="num"><u>1.13</u></td><td class="num">41.35</td><td class="num grp-start"><b>32.72</b></td><td class="num">0.301</td><td class="num">1.29</td><td class="num">54.27</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">14.55</td><td class="num">0.739</td><td class="num">3.45</td><td class="num">217.93</td><td class="num grp-start">12.28</td><td class="num">0.758</td><td class="num">3.59</td><td class="num">234.12</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">14.73</td><td class="num">0.743</td><td class="num">2.68</td><td class="num">232.97</td><td class="num grp-start">10.75</td><td class="num">0.823</td><td class="num">3.04</td><td class="num">322.00</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">16.60</td><td class="num">0.690</td><td class="num">1.95</td><td class="num">168.07</td><td class="num grp-start">15.46</td><td class="num">0.717</td><td class="num">2.29</td><td class="num">197.12</td></tr>
+</tbody>
+</table></div></div>
+<div class="tab-pane" id="full-AFHQ"><p class="table-note">AFHQ: 64 test images. BAM and BAM<sup>★</sup> use three steps.</p><div class="table-container"><table class="table results-table is-narrow is-hoverable" id="tab-AFHQ">
+<thead><tr><th rowspan="2">Method</th><th rowspan="2" class="num">NFEs</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.025</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.05</th>
+</tr><tr>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+</tr></thead>
+<tbody><tr class="sec"><td colspan="10"><b>Deblurring</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><u>27.41</u></td><td class="num"><u>0.336</u></td><td class="num"><u>0.23</u></td><td class="num"><u>33.52</u></td><td class="num grp-start"><u>26.89</u></td><td class="num"><u>0.354</u></td><td class="num"><u>0.26</u></td><td class="num"><u>35.62</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">26.85</td><td class="num"><b>0.294</b></td><td class="num"><b>0.18</b></td><td class="num"><b>23.89</b></td><td class="num grp-start">26.41</td><td class="num"><b>0.311</b></td><td class="num"><b>0.19</b></td><td class="num"><b>24.21</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start"><b>27.85</b></td><td class="num">0.417</td><td class="num">1.17</td><td class="num">52.11</td><td class="num grp-start"><b>27.46</b></td><td class="num">0.444</td><td class="num">1.41</td><td class="num">60.40</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">23.37</td><td class="num">0.440</td><td class="num">0.48</td><td class="num">64.81</td><td class="num grp-start">21.48</td><td class="num">0.486</td><td class="num">0.50</td><td class="num">71.87</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">24.62</td><td class="num">0.494</td><td class="num">1.44</td><td class="num">67.77</td><td class="num grp-start">22.63</td><td class="num">0.558</td><td class="num">1.60</td><td class="num">92.28</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">23.49</td><td class="num">0.469</td><td class="num">0.89</td><td class="num">76.62</td><td class="num grp-start">22.74</td><td class="num">0.497</td><td class="num">0.93</td><td class="num">81.11</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">24.43</td><td class="num">0.420</td><td class="num">0.31</td><td class="num">42.88</td><td class="num grp-start">24.05</td><td class="num">0.420</td><td class="num">0.30</td><td class="num">44.82</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Super-resolution</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><u>27.24</u></td><td class="num"><u>0.348</u></td><td class="num"><u>0.29</u></td><td class="num"><u>34.66</u></td><td class="num grp-start"><u>26.52</u></td><td class="num"><u>0.371</u></td><td class="num">0.42</td><td class="num"><u>39.53</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">26.40</td><td class="num"><b>0.308</b></td><td class="num"><b>0.25</b></td><td class="num"><b>26.26</b></td><td class="num grp-start">25.68</td><td class="num"><b>0.332</b></td><td class="num"><u>0.31</u></td><td class="num"><b>29.22</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start"><b>28.72</b></td><td class="num">0.404</td><td class="num">0.85</td><td class="num">56.29</td><td class="num grp-start"><b>27.95</b></td><td class="num">0.442</td><td class="num">1.17</td><td class="num">67.87</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">23.27</td><td class="num">0.478</td><td class="num">0.92</td><td class="num">70.52</td><td class="num grp-start">20.48</td><td class="num">0.560</td><td class="num">1.35</td><td class="num">92.08</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">25.31</td><td class="num">0.483</td><td class="num">1.29</td><td class="num">63.49</td><td class="num grp-start">22.47</td><td class="num">0.577</td><td class="num">1.67</td><td class="num">104.06</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">22.85</td><td class="num">0.493</td><td class="num">0.93</td><td class="num">65.46</td><td class="num grp-start">21.09</td><td class="num">0.553</td><td class="num">1.09</td><td class="num">76.40</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">24.60</td><td class="num">0.383</td><td class="num"><b>0.25</b></td><td class="num">35.20</td><td class="num grp-start">23.75</td><td class="num">0.419</td><td class="num"><b>0.26</b></td><td class="num">39.93</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Inpainting</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><b>29.32</b></td><td class="num"><u>0.223</u></td><td class="num"><b>0.07</b></td><td class="num"><u>16.09</u></td><td class="num grp-start"><b>28.41</b></td><td class="num"><u>0.277</u></td><td class="num"><u>0.13</u></td><td class="num"><u>21.87</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>29.15</u></td><td class="num"><b>0.209</b></td><td class="num"><u>0.08</u></td><td class="num"><b>14.33</b></td><td class="num grp-start"><u>27.98</u></td><td class="num"><b>0.257</b></td><td class="num"><b>0.12</b></td><td class="num"><b>19.36</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">24.73</td><td class="num">0.419</td><td class="num">1.11</td><td class="num">66.55</td><td class="num grp-start">24.68</td><td class="num">0.427</td><td class="num">1.00</td><td class="num">62.86</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">14.20</td><td class="num">0.739</td><td class="num">2.04</td><td class="num">92.70</td><td class="num grp-start">13.65</td><td class="num">0.737</td><td class="num">2.01</td><td class="num">85.07</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">13.30</td><td class="num">0.796</td><td class="num">2.61</td><td class="num">293.10</td><td class="num grp-start">12.37</td><td class="num">0.817</td><td class="num">2.93</td><td class="num">329.01</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">14.09</td><td class="num">0.750</td><td class="num">2.33</td><td class="num">104.17</td><td class="num grp-start">13.47</td><td class="num">0.762</td><td class="num">2.25</td><td class="num">100.78</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">20.09</td><td class="num">0.585</td><td class="num">0.71</td><td class="num">64.51</td><td class="num grp-start">19.49</td><td class="num">0.631</td><td class="num">1.05</td><td class="num">71.92</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Demosaicing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><b>34.66</b></td><td class="num"><u>0.129</u></td><td class="num"><b>0.03</b></td><td class="num"><u>7.86</u></td><td class="num grp-start"><b>31.49</b></td><td class="num"><u>0.215</u></td><td class="num"><b>0.06</b></td><td class="num"><u>15.77</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>34.23</u></td><td class="num"><b>0.125</b></td><td class="num"><u>0.06</u></td><td class="num"><b>7.56</b></td><td class="num grp-start"><u>30.84</u></td><td class="num"><b>0.204</b></td><td class="num"><u>0.10</u></td><td class="num"><b>15.08</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">30.67</td><td class="num">0.388</td><td class="num">0.73</td><td class="num">62.01</td><td class="num grp-start">29.42</td><td class="num">0.438</td><td class="num">0.89</td><td class="num">73.68</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">17.06</td><td class="num">0.650</td><td class="num">2.35</td><td class="num">105.73</td><td class="num grp-start">13.91</td><td class="num">0.703</td><td class="num">2.38</td><td class="num">101.36</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">18.07</td><td class="num">0.614</td><td class="num">1.87</td><td class="num">95.46</td><td class="num grp-start">13.83</td><td class="num">0.708</td><td class="num">2.22</td><td class="num">160.66</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">18.83</td><td class="num">0.585</td><td class="num">1.92</td><td class="num">97.06</td><td class="num grp-start">16.63</td><td class="num">0.660</td><td class="num">2.35</td><td class="num">114.93</td></tr>
+<tr><td>SILO</td><td class="num">200</td><td class="num grp-start">21.80</td><td class="num">0.466</td><td class="num">0.31</td><td class="num">47.84</td><td class="num grp-start">21.77</td><td class="num">0.477</td><td class="num">0.28</td><td class="num">47.71</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Compressed sensing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><b>32.05</b></td><td class="num"><b>0.173</b></td><td class="num"><b>0.05</b></td><td class="num"><u>12.20</u></td><td class="num grp-start"><b>30.10</b></td><td class="num"><b>0.233</b></td><td class="num"><b>0.09</b></td><td class="num"><b>18.23</b></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>30.97</u></td><td class="num"><u>0.178</u></td><td class="num"><u>0.08</u></td><td class="num"><b>12.01</b></td><td class="num grp-start"><u>28.65</u></td><td class="num"><u>0.241</u></td><td class="num"><u>0.11</u></td><td class="num"><u>19.26</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">23.97</td><td class="num">0.404</td><td class="num">1.12</td><td class="num">38.90</td><td class="num grp-start">23.83</td><td class="num">0.446</td><td class="num">1.31</td><td class="num">44.47</td></tr>
+<tr><td>LATINO</td><td class="num">8</td><td class="num grp-start">14.71</td><td class="num">0.700</td><td class="num">2.16</td><td class="num">89.67</td><td class="num grp-start">12.48</td><td class="num">0.716</td><td class="num">2.25</td><td class="num">85.35</td></tr>
+<tr><td>LATINO-PRO</td><td class="num">65</td><td class="num grp-start">13.86</td><td class="num">0.769</td><td class="num">2.74</td><td class="num">230.27</td><td class="num grp-start">11.16</td><td class="num">0.829</td><td class="num">3.05</td><td class="num">297.84</td></tr>
+<tr><td>TReg</td><td class="num">200</td><td class="num grp-start">15.22</td><td class="num">0.710</td><td class="num">2.46</td><td class="num">92.96</td><td class="num grp-start">14.40</td><td class="num">0.735</td><td class="num">2.52</td><td class="num">97.29</td></tr>
+</tbody>
+</table></div></div>
+<div class="tab-pane" id="full-LSUN"><p class="table-note">LSUN: 300 test images. BAM and BAM<sup>★</sup> use three steps.</p><div class="table-container"><table class="table results-table is-narrow is-hoverable" id="tab-LSUN">
+<thead><tr><th rowspan="2">Method</th><th rowspan="2" class="num">NFEs</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.025</th>
+<th colspan="4" class="grp">σ<sub>y</sub> = 0.05</th>
+</tr><tr>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+<th class="num grp-start">PSNR↑</th>
+<th class="num">LPIPS↓</th>
+<th class="num">CMMD↓</th>
+<th class="num">FID↓</th>
+</tr></thead>
+<tbody><tr class="sec"><td colspan="10"><b>Deblurring</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">25.78</td><td class="num"><b>0.154</b></td><td class="num">1.86</td><td class="num">89.35</td><td class="num grp-start">25.38</td><td class="num"><b>0.160</b></td><td class="num">2.15</td><td class="num">90.52</td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>26.16</u></td><td class="num"><u>0.155</u></td><td class="num"><b>1.02</b></td><td class="num"><u>49.41</u></td><td class="num grp-start"><u>25.79</u></td><td class="num"><b>0.160</b></td><td class="num"><b>1.26</b></td><td class="num"><u>48.28</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">25.97</td><td class="num">0.213</td><td class="num">1.92</td><td class="num">77.53</td><td class="num grp-start">25.58</td><td class="num">0.239</td><td class="num">2.20</td><td class="num">87.09</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>27.25</b></td><td class="num">0.304</td><td class="num">1.87</td><td class="num">76.90</td><td class="num grp-start"><b>26.59</b></td><td class="num">0.333</td><td class="num">2.11</td><td class="num">86.54</td></tr>
+<tr><td>COSIGN</td><td class="num">2</td><td class="num grp-start">24.74</td><td class="num">0.215</td><td class="num"><u>1.08</u></td><td class="num"><b>43.40</b></td><td class="num grp-start">24.60</td><td class="num"><u>0.230</u></td><td class="num"><u>1.43</u></td><td class="num"><b>44.41</b></td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start">25.96</td><td class="num">0.279</td><td class="num">1.68</td><td class="num">81.61</td><td class="num grp-start">23.45</td><td class="num">0.380</td><td class="num">2.55</td><td class="num">98.44</td></tr>
+<tr><td>CM4AI</td><td class="num">1</td><td class="num grp-start">23.82</td><td class="num">0.419</td><td class="num">2.29</td><td class="num">199.04</td><td class="num grp-start">23.33</td><td class="num">0.443</td><td class="num">2.36</td><td class="num">213.70</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Super-resolution</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">25.67</td><td class="num"><u>0.160</u></td><td class="num">2.07</td><td class="num">95.97</td><td class="num grp-start">25.13</td><td class="num"><u>0.170</u></td><td class="num">2.38</td><td class="num">100.50</td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start">25.69</td><td class="num"><b>0.150</b></td><td class="num"><b>1.08</b></td><td class="num"><b>47.80</b></td><td class="num grp-start">25.13</td><td class="num"><b>0.160</b></td><td class="num"><u>1.38</u></td><td class="num"><u>49.74</u></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">21.13</td><td class="num">0.525</td><td class="num">2.48</td><td class="num">163.48</td><td class="num grp-start">20.83</td><td class="num">0.577</td><td class="num">3.44</td><td class="num">200.71</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>27.09</b></td><td class="num">0.302</td><td class="num">1.80</td><td class="num"><u>73.45</u></td><td class="num grp-start"><b>26.27</b></td><td class="num">0.342</td><td class="num">2.20</td><td class="num">88.81</td></tr>
+<tr><td>COSIGN</td><td class="num">2</td><td class="num grp-start">21.73</td><td class="num">0.245</td><td class="num">2.45</td><td class="num">113.81</td><td class="num grp-start">20.75</td><td class="num">0.370</td><td class="num">2.90</td><td class="num">160.95</td></tr>
+<tr><td>UD2M</td><td class="num">12</td><td class="num grp-start">23.50</td><td class="num">0.439</td><td class="num">3.40</td><td class="num">114.50</td><td class="num grp-start">23.78</td><td class="num">0.315</td><td class="num"><b>0.67</b></td><td class="num"><b>48.31</b></td></tr>
+<tr><td>CM4AI</td><td class="num">1</td><td class="num grp-start"><u>25.78</u></td><td class="num">0.324</td><td class="num"><u>1.76</u></td><td class="num">128.71</td><td class="num grp-start"><u>25.52</u></td><td class="num">0.320</td><td class="num">1.57</td><td class="num">123.33</td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Inpainting</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">28.13</td><td class="num"><u>0.067</u></td><td class="num"><u>0.77</u></td><td class="num">65.90</td><td class="num grp-start">27.46</td><td class="num"><u>0.090</u></td><td class="num"><u>1.19</u></td><td class="num">76.43</td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>28.24</u></td><td class="num"><b>0.060</b></td><td class="num"><b>0.41</b></td><td class="num"><b>39.74</b></td><td class="num grp-start"><u>27.51</u></td><td class="num"><b>0.071</b></td><td class="num"><b>0.55</b></td><td class="num"><b>38.77</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">23.14</td><td class="num">0.224</td><td class="num">2.55</td><td class="num">125.54</td><td class="num grp-start">23.30</td><td class="num">0.224</td><td class="num">2.42</td><td class="num">120.08</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>28.64</b></td><td class="num">0.238</td><td class="num">1.31</td><td class="num"><u>53.26</u></td><td class="num grp-start"><b>28.20</b></td><td class="num">0.261</td><td class="num">1.58</td><td class="num"><u>60.24</u></td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Demosaicing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start">34.41</td><td class="num"><u>0.028</u></td><td class="num"><u>0.40</u></td><td class="num">40.88</td><td class="num grp-start">31.55</td><td class="num"><u>0.067</u></td><td class="num"><u>0.59</u></td><td class="num">53.57</td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><u>34.66</u></td><td class="num"><b>0.023</b></td><td class="num"><b>0.29</b></td><td class="num"><u>27.67</u></td><td class="num grp-start"><u>31.66</u></td><td class="num"><b>0.048</b></td><td class="num"><b>0.38</b></td><td class="num"><b>27.71</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">30.10</td><td class="num">0.152</td><td class="num">1.31</td><td class="num">69.66</td><td class="num grp-start">28.96</td><td class="num">0.182</td><td class="num">1.60</td><td class="num">79.74</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start"><b>35.17</b></td><td class="num">0.114</td><td class="num">0.43</td><td class="num"><b>21.45</b></td><td class="num grp-start"><b>32.91</b></td><td class="num">0.161</td><td class="num">0.61</td><td class="num"><u>33.69</u></td></tr>
+</tbody>
+<tbody><tr class="sec"><td colspan="10"><b>Compressed sensing</b></td></tr>
+<tr class="bam-row"><td>BAM</td><td class="num">3</td><td class="num grp-start"><u>31.90</u></td><td class="num"><u>0.044</u></td><td class="num"><u>0.49</u></td><td class="num"><u>49.93</u></td><td class="num grp-start"><u>30.08</u></td><td class="num"><u>0.071</u></td><td class="num"><u>0.75</u></td><td class="num"><u>60.07</u></td></tr>
+<tr class="bam-row"><td>BAM<sup>★</sup></td><td class="num">3</td><td class="num grp-start"><b>32.34</b></td><td class="num"><b>0.037</b></td><td class="num"><b>0.32</b></td><td class="num"><b>29.84</b></td><td class="num grp-start"><b>30.46</b></td><td class="num"><b>0.053</b></td><td class="num"><b>0.41</b></td><td class="num"><b>29.36</b></td></tr>
+<tr><td>RAM</td><td class="num">1</td><td class="num grp-start">22.65</td><td class="num">0.205</td><td class="num">2.31</td><td class="num">109.29</td><td class="num grp-start">22.58</td><td class="num">0.238</td><td class="num">2.58</td><td class="num">135.76</td></tr>
+<tr><td>RAM<sup>★</sup></td><td class="num">1</td><td class="num grp-start">29.81</td><td class="num">0.246</td><td class="num">1.69</td><td class="num">53.40</td><td class="num grp-start">29.21</td><td class="num">0.271</td><td class="num">1.91</td><td class="num">62.45</td></tr>
+</tbody>
+</table></div></div></div>
+  </div>
+</section>
+
+<!-- Beyond natural images -->
+<section class="section" id="beyond">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Beyond natural images</h2>
+    <div class="content has-text-justified">
+      <p>
+        <b>Sparse-view CT.</b> BAM extends to CT on LIDC-IDRI chest slices with 51 parallel-beam projections, a
+        single-channel modality far from the natural images seen during pre-training. After finetuning on CT, three-step BAM samples
+        recover fine lung vessels, and the pixelwise standard deviation over 64 draws concentrates on anatomical edges and vessels,
+        at the same order of magnitude as the error of the posterior mean: a spatial uncertainty map at no extra training cost.
+      </p>
+    </div>
+  </div>
+  <div class="container is-max-widescreen">
+    <div class="ct-grid">
+        <figure class="ct-cell"><figcaption>Ground truth</figcaption><img src="static/images/ct/gt_panel.webp" alt="CT: Ground truth" loading="lazy"></figure>
+        <figure class="ct-cell"><figcaption>Filtered backprojection</figcaption><img src="static/images/ct/fbp_panel.webp" alt="CT: Filtered backprojection" loading="lazy"></figure>
+        <figure class="ct-cell"><figcaption>BAM sample</figcaption><img src="static/images/ct/bam_sample_panel.webp" alt="CT: BAM sample" loading="lazy"></figure>
+        <figure class="ct-cell"><figcaption>BAM mean</figcaption><img src="static/images/ct/bam_mean_panel.webp" alt="CT: BAM mean" loading="lazy"></figure>
+        <figure class="ct-cell"><figcaption>4×4 std. (N = 64)</figcaption><img src="static/images/ct/section4_std_zoom.webp" alt="CT: 4×4 std. (N = 64)" loading="lazy"></figure>
+        <figure class="ct-cell"><figcaption>4×4 residual</figcaption><img src="static/images/ct/section4_residual_zoom.webp" alt="CT: 4×4 residual" loading="lazy"></figure>
+    </div>
+    <p class="figure-caption has-text-grey is-size-6 has-text-centered">
+      Left to right: ground truth, filtered backprojection, one BAM sample, posterior mean, standard deviation over 64 draws, and
+      residual |GT − mean|. Yellow boxes and 4× strips show the same lung region in every panel.
+    </p>
+  </div>
+  <div class="container is-max-desktop mt-5">
+    <div class="content has-text-justified">
+      <ul>
+        <li><b>Blind motion deblurring.</b> With spatially varying kernels estimated by a pre-trained kernel predictor network,
+          BAM outperforms both RAM and the original unrolled PnP architecture on the Köhler benchmark, although it was never trained on such operators.</li>
+        <li><b>Non-linear JPEG restoration.</b> After finetuning, BAM restores noisy JPEG-compressed images (Q = 10), generating missing
+          details and regularising noisy areas where zero-shot and unrolled methods generalise poorly.</li>
+        <li><b>Posterior mean.</b> Averaging repeated BAM draws gives a Monte Carlo posterior-mean estimate whose PSNR exceeds that of the
+          fine-tuned MMSE network RAM<sup>★</sup> on four of five problems: samples are sharp individually yet accurate on average.</li>
+      </ul>
+      <h3 class="title is-5">Limitations</h3>
+      <p>
+        BAM handles only additive Gaussian noise and linear or mildly non-linear forward operators. It is non-blind, so blind problems rely
+        on an external operator estimate. It does not detect model misspecification, so under strong distribution shift it can return
+        unreliable posteriors without warning. Finally, posterior sample quality was assessed empirically; formal guarantees for the learned
+        conditional flow map remain open.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!--BibTex citation -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <!-- TODO: update with the arXiv / venue entry once available -->
+    <pre><code>@misc{spagnoletti2026bam,
+  title  = {{BAM!} {B}ayesian {A}nything {M}odel: a foundation model for generative computational imaging},
+  author = {Spagnoletti, Alessio and Kemajou Mbakam, Charlesquin and Spence, Jonathan and Almansa, Andr{\'e}s and Pereyra, Marcelo},
+  year   = {2026}
+}</code></pre>
+  </div>
+</section>
+<!--End BibTex citation -->
+
+<!-- Comparison modal -->
+<div class="modal" id="compare-modal">
+  <div class="modal-background"></div>
+  <div class="modal-content" style="overflow: visible;">
+    <div class="compare-box">
+      <p class="has-text-weight-semibold mb-2" id="compare-title"></p>
+      <div class="compare-controls">
+        <div class="select is-small"><select id="compare-left" aria-label="Left image"></select></div>
+        <div class="select is-small"><select id="compare-right" aria-label="Right image"></select></div>
+      </div>
+      <img-comparison-slider id="compare-slider" value="50">
+        <img slot="first" id="compare-img-left" alt="">
+        <img slot="second" id="compare-img-right" alt="">
+      </img-comparison-slider>
+    </div>
+  </div>
+  <button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const QUAL = {"DIV2K-0": {"title": "<b>Gaussian deblurring</b> σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/div2k/r0-c0.webp"}, {"name": "BAM", "src": "static/images/results/div2k/r0-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/div2k/r0-c2.webp"}, {"name": "RAM", "src": "static/images/results/div2k/r0-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/div2k/r0-c4.webp"}, {"name": "SILO", "src": "static/images/results/div2k/r0-c5.webp"}, {"name": "TReg", "src": "static/images/results/div2k/r0-c6.webp"}, {"name": "GT", "src": "static/images/results/div2k/r0-c7.webp"}]}, "DIV2K-1": {"title": "<b>SR ×4</b> σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/div2k/r1-c0.png"}, {"name": "BAM", "src": "static/images/results/div2k/r1-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/div2k/r1-c2.webp"}, {"name": "RAM", "src": "static/images/results/div2k/r1-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/div2k/r1-c4.webp"}, {"name": "SILO", "src": "static/images/results/div2k/r1-c5.webp"}, {"name": "TReg", "src": "static/images/results/div2k/r1-c6.webp"}, {"name": "GT", "src": "static/images/results/div2k/r1-c7.webp"}]}, "DIV2K-2": {"title": "<b>Inpainting</b> σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/div2k/r2-c0.webp"}, {"name": "BAM", "src": "static/images/results/div2k/r2-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/div2k/r2-c2.webp"}, {"name": "RAM", "src": "static/images/results/div2k/r2-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/div2k/r2-c4.webp"}, {"name": "SILO", "src": "static/images/results/div2k/r2-c5.webp"}, {"name": "TReg", "src": "static/images/results/div2k/r2-c6.webp"}, {"name": "GT", "src": "static/images/results/div2k/r2-c7.webp"}]}, "FFHQ-0": {"title": "<b>FFHQ — Gaussian deblurring</b>, σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/ffhq/r0-c0.webp"}, {"name": "BAM", "src": "static/images/results/ffhq/r0-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/ffhq/r0-c2.webp"}, {"name": "RAM", "src": "static/images/results/ffhq/r0-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/ffhq/r0-c4.webp"}, {"name": "SILO", "src": "static/images/results/ffhq/r0-c5.webp"}, {"name": "UD2M", "src": "static/images/results/ffhq/r0-c6.webp"}, {"name": "I2SB", "src": "static/images/results/ffhq/r0-c7.webp"}, {"name": "GT", "src": "static/images/results/ffhq/r0-c8.webp"}]}, "FFHQ-1": {"title": "<b>FFHQ — SR ×4</b>, σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/ffhq/r1-c0.png"}, {"name": "BAM", "src": "static/images/results/ffhq/r1-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/ffhq/r1-c2.webp"}, {"name": "RAM", "src": "static/images/results/ffhq/r1-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/ffhq/r1-c4.webp"}, {"name": "SILO", "src": "static/images/results/ffhq/r1-c5.webp"}, {"name": "UD2M", "src": "static/images/results/ffhq/r1-c6.webp"}, {"name": "I2SB", "src": "static/images/results/ffhq/r1-c7.webp"}, {"name": "GT", "src": "static/images/results/ffhq/r1-c8.webp"}]}, "FFHQ-2": {"title": "<b>FFHQ — JPEG, Q = 10</b>, pre-compression σ<sub>JPEG</sub> = 0.01", "items": [{"name": "Observation", "src": "static/images/results/ffhq/r2-c0.webp"}, {"name": "BAM", "src": "static/images/results/ffhq/r2-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/ffhq/r2-c2.webp"}, {"name": "RAM", "src": "static/images/results/ffhq/r2-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/ffhq/r2-c4.webp"}, {"name": "SILO", "src": "static/images/results/ffhq/r2-c5.webp"}, {"name": "UD2M", "src": "static/images/results/ffhq/r2-c6.webp"}, {"name": "GT", "src": "static/images/results/ffhq/r2-c8.webp"}]}, "AFHQ-0": {"title": "<b>AFHQ — Inpainting</b>, σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/afhq/r0-c0.webp"}, {"name": "BAM", "src": "static/images/results/afhq/r0-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/afhq/r0-c2.webp"}, {"name": "RAM", "src": "static/images/results/afhq/r0-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/afhq/r0-c4.webp"}, {"name": "LATINO", "src": "static/images/results/afhq/r0-c5.webp"}, {"name": "L-PRO", "src": "static/images/results/afhq/r0-c6.webp"}, {"name": "TReg", "src": "static/images/results/afhq/r0-c7.webp"}, {"name": "SILO", "src": "static/images/results/afhq/r0-c8.webp"}, {"name": "GT", "src": "static/images/results/afhq/r0-c9.webp"}]}, "AFHQ-1": {"title": "<b>AFHQ — Demosaicing</b>, σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/afhq/r1-c0.webp"}, {"name": "BAM", "src": "static/images/results/afhq/r1-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/afhq/r1-c2.webp"}, {"name": "RAM", "src": "static/images/results/afhq/r1-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/afhq/r1-c4.webp"}, {"name": "LATINO", "src": "static/images/results/afhq/r1-c5.webp"}, {"name": "L-PRO", "src": "static/images/results/afhq/r1-c6.webp"}, {"name": "TReg", "src": "static/images/results/afhq/r1-c7.webp"}, {"name": "SILO", "src": "static/images/results/afhq/r1-c8.webp"}, {"name": "GT", "src": "static/images/results/afhq/r1-c9.webp"}]}, "AFHQ-2": {"title": "<b>AFHQ — Compressed sensing</b>, σ<sub>y</sub> = 0.05", "items": [{"name": "Observation", "src": "static/images/results/afhq/r2-c0.webp"}, {"name": "BAM", "src": "static/images/results/afhq/r2-c1.webp"}, {"name": "BAM<sup>★</sup>", "src": "static/images/results/afhq/r2-c2.webp"}, {"name": "RAM", "src": "static/images/results/afhq/r2-c3.webp"}, {"name": "RAM<sup>★</sup>", "src": "static/images/results/afhq/r2-c4.webp"}, {"name": "LATINO", "src": "static/images/results/afhq/r2-c5.webp"}, {"name": "L-PRO", "src": "static/images/results/afhq/r2-c6.webp"}, {"name": "TReg", "src": "static/images/results/afhq/r2-c7.webp"}, {"name": "GT", "src": "static/images/results/afhq/r2-c9.webp"}]}};
+
+  // Tabs: <div data-tabs="name"> ... <a data-tab="pane-id"> and <div data-panes="name"> .tab-pane
+  document.querySelectorAll('[data-tabs]').forEach(tabs => {
+    const panes = document.querySelector(`[data-panes="${tabs.dataset.tabs}"]`);
+    tabs.querySelectorAll('a[data-tab]').forEach(a => a.addEventListener('click', () => {
+      tabs.querySelectorAll('li').forEach(li => li.classList.toggle('is-active', li === a.parentElement));
+      panes.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('is-active', p.id === a.dataset.tab));
+    }));
+  });
+
+  // Comparison modal for the visual-comparison grids
+  (function () {
+    const modal = document.getElementById('compare-modal');
+    const left = document.getElementById('compare-left');
+    const right = document.getElementById('compare-right');
+    const imgL = document.getElementById('compare-img-left');
+    const imgR = document.getElementById('compare-img-right');
+    let items = [];
+
+    const label = html => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent; };
+    const update = () => {
+      imgL.src = items[left.value].src;  imgL.alt = label(items[left.value].name);
+      imgR.src = items[right.value].src; imgR.alt = label(items[right.value].name);
+    };
+    const close = () => modal.classList.remove('is-active');
+
+    document.querySelectorAll('.qual-cell[data-ex]').forEach(cell => cell.addEventListener('click', () => {
+      const ex = QUAL[cell.dataset.ex];
+      items = ex.items;
+      document.getElementById('compare-title').innerHTML = ex.title;
+      const opts = items.map((it, i) => `<option value="${i}">${label(it.name)}</option>`).join('');
+      left.innerHTML = opts; right.innerHTML = opts;
+      const idx = +cell.dataset.idx;
+      const bam = items.findIndex(it => label(it.name) === 'BAM');
+      left.value = idx;
+      right.value = idx === bam ? items.length - 1 : bam;   // compare against BAM (or GT when BAM was clicked)
+      update();
+      modal.classList.add('is-active');
+    }));
+    left.addEventListener('change', update);
+    right.addEventListener('change', update);
+    modal.querySelector('.modal-background').addEventListener('click', close);
+    modal.querySelector('.modal-close').addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  })();
+
+  // "Coming soon" tooltip for links that are not public yet
+  (function () {
+    const tip = Object.assign(document.createElement('div'), { className: 'coming-tooltip', textContent: 'Coming soon!' });
+    document.body.appendChild(tip);
+    document.querySelectorAll('a.coming-soon').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      tip.style.left = (e.clientX + 12) + 'px';
+      tip.style.top = (e.clientY - 12) + 'px';
+      tip.style.opacity = '1';
+      clearTimeout(tip._hideTimer);
+      tip._hideTimer = setTimeout(() => tip.style.opacity = '0', 1200);
+    }));
+  })();
+</script>
+
+</body>
+</html>
